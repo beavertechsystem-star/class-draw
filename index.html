@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>建功國小 - 抽班系統</title>
+    <!-- 引入 canvas-confetti 撒花特效套件 -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        body {
+            font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+            text-align: center;
+            /* 深藍質感背景 */
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            color: #ecf0f1;
+            margin: 0;
+            padding: 40px 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+        }
+
+        .header-title {
+            color: #d4af37; /* 燙金色 */
+            font-size: clamp(24px, 5vw, 36px);
+            font-weight: bold;
+            margin-bottom: 30px;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            padding: 40px 30px;
+            border-radius: 20px;
+            border: 1px solid rgba(212, 175, 55, 0.5);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            max-width: 700px;
+            width: 90%;
+            position: relative;
+            z-index: 10;
+        }
+
+        .setup-area {
+            margin-bottom: 30px;
+            padding-bottom: 30px;
+            border-bottom: 1px dashed rgba(212, 175, 55, 0.4);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .setup-area label {
+            font-size: 18px;
+            color: #ecf0f1;
+        }
+
+        .input-group {
+            display: flex;
+            width: 100%;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        input[type="text"] {
+            padding: 12px 15px;
+            width: 70%;
+            min-width: 200px;
+            font-size: 18px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid #d4af37;
+            color: #fff;
+            border-radius: 8px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus {
+            border-color: #f1c40f;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .setup-area button {
+            font-size: 16px;
+            padding: 12px 20px;
+            background-color: transparent;
+            color: #d4af37;
+            border: 1px solid #d4af37;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .setup-area button:hover {
+            background-color: #d4af37;
+            color: #0f2027;
+        }
+
+        .setup-title {
+            font-size: 16px;
+            color: #bdc3c7;
+            text-align: left;
+            margin-bottom: 10px;
+            width: 100%;
+        }
+        
+        .selector-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 25px;
+            justify-content: flex-start;
+        }
+
+        .sel-btn {
+            font-size: 16px !important;
+            padding: 8px 16px !important;
+            background: rgba(255, 255, 255, 0.1) !important;
+            border: 1px solid #d4af37 !important;
+            color: #fff !important;
+            border-radius: 8px !important;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .sel-btn.active {
+            background: #d4af37 !important;
+            color: #0f2027 !important;
+            font-weight: bold;
+        }
+
+        .sel-btn:hover {
+            background: rgba(212, 175, 55, 0.3) !important;
+        }
+        
+        .sel-btn.active:hover {
+            background: #f1c40f !important;
+        }
+
+        .selected-preview {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 16px;
+            color: #d4af37;
+            width: 100%;
+            box-sizing: border-box;
+            min-height: 54px;
+            text-align: left;
+            line-height: 1.5;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .apply-btn {
+            width: 100%;
+            font-size: 18px !important;
+            padding: 12px 20px !important;
+            background: rgba(212, 175, 55, 0.1) !important;
+            font-weight: bold;
+        }
+        .apply-btn:hover {
+            background: #d4af37 !important;
+            color: #0f2027 !important;
+        }
+
+        .action-group {
+            display: flex;
+            gap: 15px;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .clear-btn {
+            width: 35%;
+            font-size: 18px !important;
+            padding: 12px 20px !important;
+            background: rgba(231, 76, 60, 0.1) !important;
+            color: #e74c3c !important;
+            border: 1px solid #e74c3c !important;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+
+        .clear-btn:hover {
+            background: #e74c3c !important;
+            color: #fff !important;
+        }
+
+        .draw-area {
+            margin: 40px 0;
+            position: relative;
+        }
+
+        #display {
+            font-size: clamp(40px, 8vw, 80px);
+            font-weight: bold;
+            color: #fff;
+            height: 1.5em;
+            line-height: 1.5em;
+            margin-bottom: 30px;
+            text-shadow: 0 0 20px rgba(255,255,255,0.3);
+            letter-spacing: 5px;
+            transition: color 0.3s, transform 0.3s;
+        }
+
+        .draw-btn {
+            padding: 15px 50px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            background: linear-gradient(135deg, #d4af37, #f1c40f);
+            color: #0f2027;
+            border: none;
+            border-radius: 50px;
+            box-shadow: 0 5px 15px rgba(212, 175, 55, 0.4);
+            transition: transform 0.2s, box-shadow 0.2s, background 0.3s;
+            width: 80%;
+            max-width: 300px;
+        }
+
+        .draw-btn:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(212, 175, 55, 0.6);
+        }
+
+        .draw-btn:active:not(:disabled) {
+            transform: translateY(1px);
+        }
+
+        .draw-btn:disabled {
+            background: #7f8c8d;
+            color: #bdc3c7;
+            box-shadow: none;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status-area {
+            font-size: 18px;
+            color: #bdc3c7;
+            margin-top: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 12px;
+        }
+
+        #remainingClasses {
+            color: #d4af37;
+            font-weight: bold;
+            line-height: 1.8;
+            margin-top: 8px;
+            font-size: 20px;
+        }
+
+        #corgi-container {
+            position: absolute;
+            bottom: -80px;
+            right: -60px;
+            width: clamp(150px, 20vw, 220px);
+            opacity: 0;
+            transform: translateY(100px) scale(0.5) rotate(15deg);
+            transition: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            pointer-events: none;
+            z-index: 20;
+        }
+
+        #corgi-container.show {
+            opacity: 1;
+            transform: translateY(0) scale(1) rotate(0deg);
+        }
+
+        #corgi-container img {
+            width: 100%;
+            height: auto;
+            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.6));
+        }
+
+        /* 手機版微調 */
+        @media (max-width: 600px) {
+            #corgi-container {
+                right: -20px;
+                bottom: -60px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header-title">建功國小｜抽班系統</div>
+
+<div class="container">
+    <!-- 設定區 -->
+    <div class="setup-area">
+        <div class="setup-title">1. 請選擇年級：</div>
+        <div class="selector-group" id="gradeSelector">
+            <!-- 年級按鈕將由 JavaScript 動態產生 -->
+        </div>
+
+        <div class="setup-title">2. 請點選要加入籤筒的班級 (可多選)：</div>
+        <div class="selector-group" id="classSelector">
+            <!-- 班級按鈕將由 JavaScript 動態產生 -->
+        </div>
+
+        <div class="setup-title">3. 目前籤筒準備名單：</div>
+        <div class="selected-preview" id="selectedPreviewText">
+            尚未選擇
+        </div>
+        
+        <div class="action-group">
+            <button class="clear-btn" onclick="clearSelection()">清空選擇</button>
+            <button class="apply-btn" onclick="applyPool()" style="width: 65%;">確認並更新籤筒</button>
+        </div>
+    </div>
+
+    <!-- 抽籤區 -->
+    <div class="draw-area">
+        <div id="display">等待抽籤</div>
+        <button id="drawBtn" class="draw-btn" onclick="startDraw()">開始抽籤</button>
+        
+        <!-- 慶祝柯基圖片區 -->
+        <div id="corgi-container">
+            <!-- 這裡使用一張開心的狗狗代替，您可以隨時將 src 替換為您的柯基圖 -->
+            <img src="https://cdn-icons-png.flaticon.com/512/3034/3034032.png" alt="慶祝柯基" onerror="this.src='https://placehold.co/200x200/transparent/d4af37?text=Corgi'">
+        </div>
+    </div>
+
+    <!-- 狀態區 -->
+    <div class="status-area">
+        目前籤筒剩餘班級：
+        <div id="remainingClasses">請先更新籤筒</div>
+    </div>
+</div>
+
+<script>
+    let pool = [];
+    let isDrawing = false;
+
+    // 新增：年級與班級的選項資料
+    const grades = ['一', '二', '三', '四', '五', '六'];
+    const classNums = ['一', '二', '三', '四', '五', '六', '七', '八', '九'];
+    
+    let currentGrade = '一'; // 預設停留在一年級
+    // 預設先選好四個班級作為範例
+    let selectedSet = new Set(['一年一班', '一年二班', '一年三班', '一年四班']); 
+
+    // 初始化年級與班級選擇按鈕
+    function initSelectors() {
+        const gradeContainer = document.getElementById('gradeSelector');
+        gradeContainer.innerHTML = ''; // 清空
+        
+        // 產生年級按鈕
+        grades.forEach(g => {
+            const btn = document.createElement('button');
+            btn.className = `sel-btn ${g === currentGrade ? 'active' : ''}`;
+            btn.innerText = `${g}年級`;
+            btn.onclick = () => {
+                currentGrade = g; // 切換當前年級
+                initSelectors();  // 重新渲染年級按鈕（更新 highlight）
+                renderClasses();  // 切換下方對應的班級按鈕
+            };
+            gradeContainer.appendChild(btn);
+        });
+        
+        renderClasses();
+    }
+
+    // 渲染班級按鈕（依據當前選擇的年級）
+    function renderClasses() {
+        const classContainer = document.getElementById('classSelector');
+        classContainer.innerHTML = ''; // 清空
+        
+        classNums.forEach(c => {
+            const className = `${currentGrade}年${c}班`;
+            const btn = document.createElement('button');
+            // 如果這個班級已經在選擇清單中，加上 active class
+            btn.className = `sel-btn ${selectedSet.has(className) ? 'active' : ''}`;
+            btn.innerText = `${c}班`;
+            
+            btn.onclick = () => {
+                // 點擊時切換選取狀態
+                if (selectedSet.has(className)) {
+                    selectedSet.delete(className);
+                } else {
+                    selectedSet.add(className);
+                }
+                renderClasses(); // 刷新按鈕外觀
+                updatePreview(); // 更新預覽文字
+            };
+            classContainer.appendChild(btn);
+        });
+    }
+
+    // 更新畫面上的「準備名單」文字
+    function updatePreview() {
+        const preview = document.getElementById('selectedPreviewText');
+        if (selectedSet.size === 0) {
+            preview.innerText = "尚未選擇任何班級";
+            preview.style.color = "#bdc3c7";
+        } else {
+            // 將 Set 轉為 Array 並排序，確保顯示整齊
+            const sortedClasses = Array.from(selectedSet).sort();
+            preview.innerText = sortedClasses.join(' 、 ');
+            preview.style.color = "#d4af37";
+        }
+    }
+
+    // 將選好的名單正式寫入籤筒
+    function applyPool() {
+        if (selectedSet.size === 0) {
+            alert("請至少選擇一個班級喔！");
+            return;
+        }
+        
+        // 將 Set 轉換為陣列存入 pool
+        pool = Array.from(selectedSet).sort();
+        
+        // 重設抽籤畫面
+        const display = document.getElementById('display');
+        display.innerText = "等待抽籤";
+        display.style.color = "#fff";
+        display.style.transform = "scale(1)";
+        
+        hideCorgi();
+        updateRemainingDisplay();
+    }
+
+    // 清空所有選擇與籤筒
+    function clearSelection() {
+        selectedSet.clear(); // 清空記憶的選擇
+        pool = [];           // 清空實際的籤筒
+        
+        initSelectors();     // 重置班級按鈕的發亮狀態
+        updatePreview();     // 更新準備名單預覽 (顯示尚未選擇)
+        updateRemainingDisplay(); // 更新剩餘名單顯示 (顯示籤筒已空)
+        
+        // 重設抽籤大字區域
+        const display = document.getElementById('display');
+        display.innerText = "等待抽籤";
+        display.style.color = "#fff";
+        display.style.transform = "scale(1)";
+        
+        hideCorgi();
+    }
+
+    function updateRemainingDisplay() {
+        const remainingContainer = document.getElementById('remainingClasses');
+        const drawBtn = document.getElementById('drawBtn');
+        
+        if (pool.length > 0) {
+            remainingContainer.innerText = pool.join(' 、 ');
+            drawBtn.disabled = false;
+        } else {
+            remainingContainer.innerText = "籤筒已空！請重新輸入班級。";
+            drawBtn.disabled = true;
+        }
+    }
+
+    function hideCorgi() {
+        document.getElementById('corgi-container').classList.remove('show');
+    }
+
+    function showCorgiAndConfetti() {
+        // 觸發柯基跳出 CSS 動畫
+        document.getElementById('corgi-container').classList.add('show');
+        
+        // 呼叫 canvas-confetti 執行華麗撒花
+        const duration = 3 * 1000; // 撒花持續 3 秒
+        const end = Date.now() + duration;
+
+        (function frame() {
+            // 左側撒花
+            confetti({
+                particleCount: 5,
+                angle: 60,
+                spread: 55,
+                origin: { x: 0 },
+                colors: ['#d4af37', '#f1c40f', '#ffffff'] // 金色與白色系
+            });
+            // 右側撒花
+            confetti({
+                particleCount: 5,
+                angle: 120,
+                spread: 55,
+                origin: { x: 1 },
+                colors: ['#d4af37', '#f1c40f', '#ffffff']
+            });
+
+            if (Date.now() < end) {
+                requestAnimationFrame(frame);
+            }
+        }());
+    }
+
+    function startDraw() {
+        // 若籤筒沒籤或正在抽籤中，則不執行
+        if (pool.length === 0 || isDrawing) return;
+        
+        isDrawing = true;
+        const drawBtn = document.getElementById('drawBtn');
+        const display = document.getElementById('display');
+        
+        // 抽籤時鎖定按鈕，防止重複點擊
+        drawBtn.disabled = true;
+        display.style.color = "#fff";
+        display.style.transform = "scale(1)";
+        hideCorgi(); 
+
+        let ticks = 0;
+        const maxTicks = 35; // 跑馬燈跳動總次數 (營造緊張感)
+        const speed = 60;    // 跳動速度 (毫秒)
+
+        // 設定計時器產生跑馬燈效果
+        const timer = setInterval(() => {
+            // 隨機顯示陣列中的班級 (僅視覺效果)
+            const randomIndex = Math.floor(Math.random() * pool.length);
+            display.innerText = pool[randomIndex];
+            ticks++;
+
+            // 達到指定次數，停止跑馬燈並決定結果
+            if (ticks >= maxTicks) {
+                clearInterval(timer);
+                
+                // 正式抽出最終結果
+                const finalIndex = Math.floor(Math.random() * pool.length);
+                const result = pool[finalIndex];
+                
+                // 取後不放回：將抽中的班級從陣列中刪除
+                pool.splice(finalIndex, 1);
+                
+                // 顯示最終結果並加入強調動畫
+                display.innerText = result;
+                display.style.color = "#d4af37"; // 變成燙金色
+                display.style.transform = "scale(1.1)"; 
+                
+                // 觸發慶祝特效
+                showCorgiAndConfetti(); 
+                
+                // 更新剩餘名單
+                updateRemainingDisplay();
+                isDrawing = false;
+            }
+        }, speed);
+    }
+
+    // 當網頁載入完成時，初始化選單並將預設值套用至籤筒
+    window.onload = () => {
+        initSelectors();
+        updatePreview();
+        applyPool();
+    };
+</script>
+
+</body>
+</html>
